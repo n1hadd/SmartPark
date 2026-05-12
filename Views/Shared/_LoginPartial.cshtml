@@ -1,39 +1,74 @@
 @using Microsoft.AspNetCore.Identity
-@using SmartPark.Models
+@inject SignInManager<SmartPark.Models.ApplicationUser> SignInManager
+@inject UserManager<SmartPark.Models.ApplicationUser> UserManager
 
-@inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
+@{
+    var path = (Context.Request.Path.Value ?? "").ToLowerInvariant();
+    var isManage = path.StartsWith("/identity/account/manage");
+}
 
-<ul class="navbar-user ms-auto">
-    @if (SignInManager.IsSignedIn(User))
+<style>
+    .sp-auth {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .sp-pill {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 10px 12px;
+        border-radius: 14px;
+        font-weight: 850;
+        text-decoration: none;
+        background: rgba(255,255,255,.12);
+        color: rgba(255,255,255,.95);
+    }
+
+    .sp-pill:hover { background: rgba(255,255,255,.18); color: #fff; }
+
+    .sp-logout-btn {
+        width: 100%;
+        border: 0;
+        border-radius: 14px;
+        padding: 10px 12px;
+        font-weight: 900;
+        background: #ff4d6d;
+        color: #fff;
+    }
+</style>
+
+<ul class="sp-auth">
+@if (SignInManager.IsSignedIn(User))
+{
+    <li>
+        <a class="sp-pill" href="/Identity/Account/Manage">
+            @User.Identity?.Name
+        </a>
+    </li>
+
+    @* Logout pokaži samo na Manage strani (urejanje profila) *@
+    @if (isManage)
     {
-        <li class="nav-item user-greeting">
-            <a id="manage" class="nav-link user-pill" 
-               asp-area="Identity" asp-page="/Account/Manage/Index">
-                @UserManager.GetUserName(User)
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <form id="logoutForm" class="d-inline" asp-area="Identity" asp-page="/Account/Logout"
-                  asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                <button id="logout" type="submit" class="btn logout-pill">
-                    Logout
-                </button>
+        <li>
+            <form id="logoutForm" action="/Identity/Account/Logout?returnUrl=%2F" method="post">
+                <button type="submit" class="sp-logout-btn">Odjava</button>
             </form>
         </li>
     }
-    else
-    {
-        <li class="nav-item">
-            <a class="nav-link auth-pill" id="register" asp-area="Identity" asp-page="/Account/Register">
-                ✍️ Register
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link auth-pill" id="login" asp-area="Identity" asp-page="/Account/Login">
-                🔑 Login
-            </a>
-        </li>
-    }
+}
+else
+{
+    <li>
+        <a class="sp-pill" href="/Identity/Account/Login">Prijava</a>
+    </li>
+    <li>
+        <a class="sp-pill" href="/Identity/Account/Register">Registracija</a>
+    </li>
+}
 </ul>

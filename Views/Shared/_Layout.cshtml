@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="sl">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,58 +11,272 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SmartPark.styles.css" asp-append-version="true" />
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        body.smartpark-body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .sp-shell {
+            height: 100vh;
+        }
+
+        .sp-content {
+            height: 100vh;
+            overflow: auto;
+        }
+
+        body.smartpark-body {
+            background: radial-gradient(circle at 40% 0%, #f4f8ff, #eef4fb 35%, #f7fbff 100%);
+        }
+
+        .sp-shell {
+            display: grid;
+            grid-template-columns: 270px 1fr;
+            min-height: 100vh;
+        }
+
+        .sp-sidebar {
+            padding: 18px;
+            background: linear-gradient(180deg, #0b3a66, #0a2f52);
+            color: #fff;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, .16);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sp-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 900;
+            letter-spacing: .3px;
+            font-size: 20px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .sp-avatar {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+        }
+
+        .sp-usercard {
+            background: rgba(255, 255, 255, .10);
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .sp-usercard .name {
+            font-weight: 900;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .sp-usercard .sub {
+            opacity: .9;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .sp-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 2px;
+        }
+
+        .sp-nav a {
+            color: rgba(255, 255, 255, .92);
+            text-decoration: none;
+            padding: 12px 12px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 850;
+        }
+
+        .sp-nav a:hover {
+            background: rgba(255, 255, 255, .12);
+        }
+
+        .sp-nav a.active {
+            background: rgba(255, 255, 255, .18);
+        }
+
+        .sp-sidebar-footer {
+            margin-top: auto;
+            background: rgba(255, 255, 255, .10);
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        /* Topbar */
+        .sp-content {
+            padding: 18px 22px;
+        }
+
+        .sp-topbar {
+            background: #fff;
+            border-radius: 18px;
+            padding: 14px 16px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
+            display: grid;
+            grid-template-columns: 1fr minmax(380px, 1.6fr) auto;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .sp-topbar h1 {
+            font-size: 18px;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .sp-topbar .subtitle {
+            margin: 0;
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 750;
+        }
+
+        .sp-search {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f4f7fb;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+
+        .sp-search input {
+            border: 0;
+            outline: none;
+            width: 100%;
+            background: transparent;
+            font-weight: 750;
+        }
+
+        /* _LoginPartial styling inside sidebar */
+        .sp-loginpartial a,
+        .sp-loginpartial button {
+            font-weight: 850 !important;
+        }
+
+        /* Mobile */
+        @@media (max-width: 992px) {
+            .sp-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .sp-sidebar {
+                position: relative;
+                height: auto;
+            }
+
+            .sp-topbar {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body class="smartpark-body">
+    <div class="sp-shell">
 
-    <header>
-        <nav class="navbar navbar-expand-sm smartpark-navbar mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand smartpark-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    SmartPark
-                </a>
+        <aside class="sp-sidebar">
+            <a class="sp-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                <span class="sp-avatar">P</span>
+                <span>SmartPark</span>
+            </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target=".navbar-collapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+            <div class="sp-usercard">
+                <p class="name">@(User.Identity?.IsAuthenticated == true ? (User.Identity?.Name ?? "Uporabnik") :
+                                        "Gost")</p>
+                <div class="sub">Nadzorna plošča</div>
+            </div>
 
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1 smartpark-navlinks">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
+            @{
+                var path = Context.Request.Path.Value ?? "";
+                string ActiveIf(string startsWith) =>
+                path.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+            }
 
-                        @if (User.Identity?.IsAuthenticated ?? false)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Rezervacije" asp-action="Index">
-                                    Moje rezervacije
-                                </a>
-                            </li>
-                        }
-                    </ul>
+            <nav class="sp-nav">
+                <a class="@ActiveIf("/")" asp-controller="Home" asp-action="Index">Domov</a>
+
+                @if (User.Identity?.IsAuthenticated ?? false)
+                {
+                    <a class="@ActiveIf("/Rezervacije")" asp-controller="Rezervacije" asp-action="Index">Moje
+                        rezervacije</a>
+                }
+
+                @if (User.IsInRole("Administrator"))
+                {
+                    <a class="@ActiveIf("/admin/parkirisca")" href="/admin/parkirisca">Admin panel</a>
+                }
+            </nav>
+
+            <div class="sp-sidebar-footer sp-loginpartial">
+                <partial name="_LoginPartial" />
+            </div>
+        </aside>
+
+        <main class="sp-content">
+            <div class="sp-topbar">
+                <div>
+                    <h1>@ViewData["Title"]</h1>
+                    <p class="subtitle">Dobrodošel!</p>
+                </div>
+
+                @{
+                    // Home page je "/" ali "/Home" ali "/Home/Index"
+                    var p = (Context.Request.Path.Value ?? "").ToLowerInvariant();
+                    var isHome = p == "/" || p.StartsWith("/home");
+                }
+
+                @if (isHome)
+                {
+                    <div class="sp-search">
+                        <span style="font-weight:900; color:#6b7280;">🔎</span>
+                        <input id="spSearchInput" type="text" placeholder="Išči parkirišča (npr. Center)..." />
+                    </div>
+                }
+                else
+                {
+                    <div></div> @* placeholder da grid ostane poravnan *@
+                }
+
+                <div style="font-size:12px; color:#6b7280; font-weight:850;">
+                    @DateTime.Now.ToString("yyyy-MM-dd")
                 </div>
             </div>
 
-            <partial name="_LoginPartial" />
-        </nav>
-    </header>
-
-    <div class="container smartpark-container">
-        <main role="main" class="pb-3">
             @RenderBody()
         </main>
-    </div>
 
-    <footer class="smartpark-footer">
-        <div class="container">
-            &copy; 2025 - SmartPark -
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -71,4 +286,5 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
+
 </html>

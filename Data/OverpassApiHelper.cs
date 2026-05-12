@@ -29,13 +29,13 @@ namespace SmartPark.Data
 
         public async Task<List<Parkirisce>> GetParkiriscaLjubljanaAsync()
         {
-            // Query podoben temu, kar pošilja overpass-turbo
-            string query = @"[out:json][timeout:60];
-area[""name""=""Ljubljana""]->.searchArea;
-(
-  nwr[""amenity""=""parking""](area.searchArea);
-);
-out center;";
+             string query = @"[out:json];
+                            area[""name""=""Ljubljana""]->.searchArea;
+                            (
+                              node[""amenity""=""parking""][""name""](area.searchArea);
+                              way[""amenity""=""parking""][""name""](area.searchArea);
+                            );
+                            out center;";
 
             // POST je bolj robusten kot GET
             using var content = new FormUrlEncodedContent(new[]
