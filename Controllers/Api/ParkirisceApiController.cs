@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartPark.Data;
@@ -16,43 +11,35 @@ namespace SmartPark.Controllers_Api
     [ApiKeyAuth]
     public class ParkirisceApiController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly SmartParkContext _context;
 
-        public ParkirisceApiController(AppDbContext context)
+        public ParkirisceApiController(SmartParkContext context)
         {
             _context = context;
         }
 
-        // GET: api/ParkirisceApi
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Parkirisce>>> GetParkirisce()
         {
-            return await _context.Parkirisce.ToListAsync();
+            return await _context.Parkirisca.ToListAsync();
         }
 
-        // GET: api/ParkirisceApi/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Parkirisce>> GetParkirisce(int id)
         {
-            var parkirisce = await _context.Parkirisce.FindAsync(id);
+            var parkirisce = await _context.Parkirisca.FindAsync(id);
 
             if (parkirisce == null)
-            {
                 return NotFound();
-            }
 
             return parkirisce;
         }
 
-        // PUT: api/ParkirisceApi/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutParkirisce(int id, Parkirisce parkirisce)
         {
             if (id != parkirisce.Id)
-            {
                 return BadRequest();
-            }
 
             _context.Entry(parkirisce).State = EntityState.Modified;
 
@@ -62,49 +49,53 @@ namespace SmartPark.Controllers_Api
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ParkirisceExists(id))
-                {
+                if (!await _context.Parkirisca.AnyAsync(e => e.Id == id))
                     return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
 
             return NoContent();
         }
 
-        // POST: api/ParkirisceApi
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Parkirisce>> PostParkirisce(Parkirisce parkirisce)
         {
-            _context.Parkirisce.Add(parkirisce);
+            _context.Parkirisca.Add(parkirisce);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetParkirisce", new { id = parkirisce.Id }, parkirisce);
+            return CreatedAtAction(nameof(GetParkirisce), new { id = parkirisce.Id }, parkirisce);
         }
 
-        // DELETE: api/ParkirisceApi/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteParkirisce(int id)
         {
-            var parkirisce = await _context.Parkirisce.FindAsync(id);
+            var parkirisce = await _context.Parkirisca.FindAsync(id);
             if (parkirisce == null)
-            {
                 return NotFound();
-            }
 
-            _context.Parkirisce.Remove(parkirisce);
+            _context.Parkirisca.Remove(parkirisce);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool ParkirisceExists(int id)
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<Parkirisce>>> Search(double lat, double lon, double radiusKm = 3)
         {
-            return _context.Parkirisce.Any(e => e.Id == id);
+            // grob bounding box filter (hitro in dovolj za demo)
+            var latDelta = radiusKm / 111.0;
+            var lonDelta = radiusKm / (111.0 * Math.Cos(lat * Math.PI / 180.0));
+
+            var minLat = lat - latDelta;
+            var maxLat = lat + latDelta;
+            var minLon = lon - lonDelta;
+            var maxLon = lon + lonDelta;
+
+            var query = _context.Parkirisca
+                .Where(p => p.Latitude >= minLat && p.Latitude <= maxLat
+                        && p.Longitude >= minLon && p.Longitude <= maxLon);
+
+            return await query.ToListAsync();
         }
     }
 }

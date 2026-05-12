@@ -13,4 +13,8 @@ public class Placilo
     public decimal Znesek { get; set; }
     public string NacinPlacila { get; set; } = string.Empty;
     public DateTime Datum { get; set; } = DateTime.UtcNow;
+
+    public PlaciloStatus Status { get; set; } = PlaciloStatus.Pending;
+    public string? TransactionId { get; set; }
+    public string? FailureReason { get; set; }
 }

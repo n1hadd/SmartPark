@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartPark.Data;
@@ -16,43 +11,35 @@ namespace SmartPark.Controllers_Api
     [ApiKeyAuthAttribute]
     public class RezervacijaApiController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly SmartParkContext _context;
 
-        public RezervacijaApiController(AppDbContext context)
+        public RezervacijaApiController(SmartParkContext context)
         {
             _context = context;
         }
 
-        // GET: api/RezervacijaApi
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Rezervacija>>> GetRezervacija()
         {
-            return await _context.Rezervacija.ToListAsync();
+            return await _context.Rezervacije.ToListAsync();
         }
 
-        // GET: api/RezervacijaApi/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Rezervacija>> GetRezervacija(int id)
         {
-            var rezervacija = await _context.Rezervacija.FindAsync(id);
+            var rezervacija = await _context.Rezervacije.FindAsync(id);
 
             if (rezervacija == null)
-            {
                 return NotFound();
-            }
 
             return rezervacija;
         }
 
-        // PUT: api/RezervacijaApi/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutRezervacija(int id, Rezervacija rezervacija)
         {
             if (id != rezervacija.Id)
-            {
                 return BadRequest();
-            }
 
             _context.Entry(rezervacija).State = EntityState.Modified;
 
@@ -62,49 +49,34 @@ namespace SmartPark.Controllers_Api
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!RezervacijaExists(id))
-                {
+                if (!await _context.Rezervacije.AnyAsync(e => e.Id == id))
                     return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
 
             return NoContent();
         }
 
-        // POST: api/RezervacijaApi
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Rezervacija>> PostRezervacija(Rezervacija rezervacija)
         {
-            _context.Rezervacija.Add(rezervacija);
+            _context.Rezervacije.Add(rezervacija);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetRezervacija", new { id = rezervacija.Id }, rezervacija);
+            return CreatedAtAction(nameof(GetRezervacija), new { id = rezervacija.Id }, rezervacija);
         }
 
-        // DELETE: api/RezervacijaApi/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRezervacija(int id)
         {
-            var rezervacija = await _context.Rezervacija.FindAsync(id);
+            var rezervacija = await _context.Rezervacije.FindAsync(id);
             if (rezervacija == null)
-            {
                 return NotFound();
-            }
 
-            _context.Rezervacija.Remove(rezervacija);
+            _context.Rezervacije.Remove(rezervacija);
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool RezervacijaExists(int id)
-        {
-            return _context.Rezervacija.Any(e => e.Id == id);
         }
     }
 }

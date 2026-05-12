@@ -1,0 +1,64 @@
+@model SmartPark.Models.Parkirisce
+
+@{
+    ViewData["Title"] = "Admin — Dodaj parkirišče";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section TopActions {
+    <a class="btn btn-sp btn-sp-ghost" href="/admin/parkirisca">← Nazaj</a>
+}
+
+<div class="sp-card">
+    <form method="post" action="/admin/parkirisca/create">
+        @Html.AntiForgeryToken()
+
+        <div class="sp-form-grid">
+            <div class="full">
+                <label class="sp-label">Naslov</label>
+                <input class="sp-input" asp-for="Naslov" placeholder="npr. Trg Republike 1, Ljubljana" />
+                <span class="sp-validation" asp-validation-for="Naslov"></span>
+            </div>
+
+            <div>
+                <label class="sp-label">Latitude</label>
+                <input class="sp-input" asp-for="Latitude" placeholder="46.0511" />
+                <span class="sp-validation" asp-validation-for="Latitude"></span>
+            </div>
+
+            <div>
+                <label class="sp-label">Longitude</label>
+                <input class="sp-input" asp-for="Longitude" placeholder="14.5051" />
+                <span class="sp-validation" asp-validation-for="Longitude"></span>
+            </div>
+
+            <div>
+                <label class="sp-label">Število mest</label>
+                <input class="sp-input" asp-for="SteviloMest" placeholder="npr. 50" />
+                <span class="sp-validation" asp-validation-for="SteviloMest"></span>
+            </div>
+
+            <div>
+                <label class="sp-label">Cena na uro (€)</label>
+                <input class="sp-input" asp-for="CenaNaUro" placeholder="npr. 2.50" />
+                <div class="sp-help">Namig: nastavi 2.50 za demo.</div>
+                <span class="sp-validation" asp-validation-for="CenaNaUro"></span>
+            </div>
+
+            <div class="full">
+                <label class="sp-label">Delovni čas</label>
+                <input class="sp-input" asp-for="DelovniCas" placeholder="00:00–24:00" />
+                <span class="sp-validation" asp-validation-for="DelovniCas"></span>
+            </div>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px;">
+            <button type="submit" class="btn btn-sp btn-sp-primary">Shrani</button>
+            <a class="btn btn-sp btn-sp-ghost" href="/admin/parkirisca">Prekliči</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

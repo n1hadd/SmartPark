@@ -1,0 +1,70 @@
+@model IEnumerable<SmartPark.Models.Parkirisce>
+
+@{
+    ViewData["Title"] = "Admin — Parkirišča";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section TopActions {
+    <a class="btn btn-sp btn-sp-primary" href="/admin/parkirisca/create">+ Dodaj parkirišče</a>
+}
+
+<div class="sp-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <div style="font-weight:900;">Seznam parkirišč</div>
+        <div class="sp-badge">@Model.Count() zapisov</div>
+    </div>
+
+    <div style="margin-top:14px; overflow:auto;">
+        <table class="sp-table">
+            <thead>
+                <tr>
+                    <th style="min-width:220px;">Naslov</th>
+                    <th>Lat</th>
+                    <th>Lon</th>
+                    <th>Mesta</th>
+                    <th>Cena/uro</th>
+                    <th>Delovni čas</th>
+                    <th style="min-width:220px;">Akcije</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>
+                        <div style="font-weight:900;">@p.Naslov</div>
+                        <div style="font-size:12px; color:#6b7280; font-weight:700;">ID: @p.Id</div>
+                    </td>
+                    <td style="font-weight:800;">@p.Latitude</td>
+                    <td style="font-weight:800;">@p.Longitude</td>
+                    <td><span class="sp-badge">@p.SteviloMest</span></td>
+                    <td style="font-weight:900;">@p.CenaNaUro.ToString("0.00") €</td>
+                    <td style="font-weight:800;">@p.DelovniCas</td>
+                    <td>
+                        <div class="sp-actions">
+                            <a class="btn btn-sp btn-sp-ghost" href="/admin/parkirisca/edit/@p.Id">Uredi</a>
+
+                            <form method="post" action="/admin/parkirisca/delete/@p.Id" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sp btn-sp-danger"
+                                        onclick="return confirm('Res želiš izbrisati parkirišče: @p.Naslov ?');">
+                                    Izbriši
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="sp-card">
+    <div style="font-weight:900; margin-bottom:8px;">Namig</div>
+    <div style="color:#6b7280; font-weight:700;">
+        Če uvažaš parkirišča iz Overpass, priporočam, da admin panel uporabljaš za ročne popravke
+        (cena/uro, delovni čas, število mest).
+    </div>
+</div>

@@ -1,0 +1,260 @@
+@{
+    Layout = "_Layout";
+}
+
+<style>
+    .sp-admin {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 24px;
+        padding: 20px 0;
+    }
+
+    .sp-sidebar {
+        background: linear-gradient(180deg, #0b3a66, #0a2f52);
+        border-radius: 16px;
+        padding: 18px;
+        color: #fff;
+        min-height: calc(100vh - 140px);
+        position: sticky;
+        top: 16px;
+        align-self: start;
+        box-shadow: 0 12px 30px rgba(0,0,0,.12);
+    }
+
+    .sp-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        letter-spacing: .3px;
+        font-size: 20px;
+        margin-bottom: 18px;
+    }
+
+    .sp-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .sp-nav a {
+        color: rgba(255,255,255,.9);
+        text-decoration: none;
+        padding: 10px 12px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+    }
+
+    .sp-nav a:hover {
+        background: rgba(255,255,255,.12);
+    }
+
+    .sp-nav a.active {
+        background: rgba(255,255,255,.18);
+    }
+
+    .sp-main {
+        padding-right: 8px;
+    }
+
+    .sp-topbar {
+        background: #fff;
+        border-radius: 16px;
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 12px 30px rgba(0,0,0,.08);
+        margin-bottom: 16px;
+    }
+
+    .sp-topbar h1 {
+        font-size: 18px;
+        margin: 0;
+        font-weight: 800;
+    }
+
+    .sp-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(0,0,0,.08);
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .sp-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn-sp {
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 700;
+        border: 0;
+    }
+
+    .btn-sp-primary {
+        background: #1d77ff;
+        color: #fff;
+    }
+
+    .btn-sp-primary:hover {
+        background: #1664d6;
+        color: #fff;
+    }
+
+    .btn-sp-ghost {
+        background: #f3f6fb;
+        color: #0b3a66;
+    }
+
+    .btn-sp-danger {
+        background: #ff3b3b;
+        color: #fff;
+    }
+
+    .sp-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+
+    .sp-table th {
+        text-align: left;
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 800;
+        padding: 10px 12px;
+    }
+
+    .sp-table td {
+        padding: 12px;
+        background: #f8fafc;
+        vertical-align: middle;
+    }
+
+    .sp-table tr td:first-child {
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+
+    .sp-table tr td:last-child {
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    .sp-badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 800;
+        font-size: 12px;
+        background: #e8f2ff;
+        color: #0b3a66;
+    }
+
+    .sp-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .sp-form-grid .full {
+        grid-column: 1 / -1;
+    }
+
+    .sp-label {
+        font-weight: 800;
+        font-size: 13px;
+        margin-bottom: 6px;
+        display: block;
+        color: #0f172a;
+    }
+
+    .sp-input {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        padding: 10px 12px;
+        outline: none;
+    }
+
+    .sp-input:focus {
+        border-color: #1d77ff;
+        box-shadow: 0 0 0 4px rgba(29,119,255,.12);
+    }
+
+    .sp-help {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 6px;
+    }
+
+    .sp-validation {
+        color: #b91c1c;
+        font-weight: 700;
+        font-size: 12px;
+        margin-top: 6px;
+    }
+</style>
+
+<div class="container">
+    <div class="sp-admin">
+        <aside class="sp-sidebar">
+            <div class="sp-brand">
+                <span style="display:inline-flex;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.18);align-items:center;justify-content:center;font-weight:900;">P</span>
+                <span>SmartPark</span>
+            </div>
+
+            <div style="font-size:12px; opacity:.85; margin-bottom:12px;">
+                Admin Panel
+            </div>
+
+            <nav class="sp-nav">
+                <a href="/" title="Dashboard">Dashboard</a>
+                <a href="/Rezervacije" title="Reservations">Reservations</a>
+                <a href="/Placila" title="Payments">Payments</a>
+
+                @{
+                    var path = Context.Request.Path.Value ?? "";
+                    var active = path.StartsWith("/admin/parkirisca", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+                }
+                <a class="@active" href="/admin/parkirisca" title="Upravljanje parkirišč">Admin Panel</a>
+            </nav>
+
+            <hr style="border-color: rgba(255,255,255,.16); margin: 16px 0;" />
+
+            <div style="font-size:12px; opacity:.9;">
+                Prijavljen: <strong>@User.Identity?.Name</strong>
+            </div>
+        </aside>
+
+        <main class="sp-main">
+            <div class="sp-topbar">
+                <div>
+                    <h1>@ViewData["Title"]</h1>
+                    <div style="font-size:12px; color:#6b7280; font-weight:700;">
+                        Upravljanje parkirišč v bazi (Azure SQL)
+                    </div>
+                </div>
+
+                <div class="sp-actions">
+                    @RenderSection("TopActions", required: false)
+                </div>
+            </div>
+
+            @RenderBody()
+        </main>
+    </div>
+</div>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

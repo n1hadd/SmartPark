@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using SmartPark.Models;
-using Microsoft.Extensions.DependencyInjection;
-using System.Net.Http;
 
 namespace SmartPark.Data;
 
@@ -36,52 +35,46 @@ public static class DbInitializer
                 EmailConfirmed = true,
                 RegistrskaStevilka = "GO-1234"
             };
-            await userManager.CreateAsync(admin, "Admin!234"); // močno geslo
+            await userManager.CreateAsync(admin, "Admin!234");
             await userManager.AddToRoleAsync(admin, "Administrator");
         }
 
-        // Demo parkirišče + mesta
-        if (!ctx.Parkirisca.Any())
-        {
-            var p = new Parkirisce
-            {
-                Naslov = "Trg Republike 1, Ljubljana",
-                SteviloMest = 10,
-                CenaNaUro = 2.50m,
-                DelovniCas = "00:00–24:00",
-                Latitude = 46.0511,
-                Longitude = 14.5051
-            };
-            ctx.Parkirisca.Add(p);
-            await ctx.SaveChangesAsync();
-
-            var mesta = Enumerable.Range(1, 10)
-                .Select(i => new ParkirnoMesto
-                {
-                    ParkirisceId = p.Id,
-                    Tip = i <= 2 ? TipMesta.ElektricnoVozilo : (i == 3 ? TipMesta.Invalidsko : TipMesta.Navadno),
-                    Zasedeno = false
-                }).ToList();
-
-            ctx.ParkirnaMesta.AddRange(mesta);
-            await ctx.SaveChangesAsync();
-        }
     }
 
-
     public static async Task SeedOverpassParking(IServiceProvider services)
-    {
-        using var scope = services.CreateScope();
-        var ctx = scope.ServiceProvider.GetRequiredService<SmartParkContext>();
+{
+    using var scope = services.CreateScope();
+    var ctx = scope.ServiceProvider.GetRequiredService<SmartParkContext>();
 
-        
-        var httpClient = new HttpClient();
+    // enkratni import
+    if (await ctx.Parkirisca.AnyAsync())
+        return;
+
+    try
+    {
+        using var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(120) // Overpass je počasen
+        };
+
         var api = new OverpassApiHelper(httpClient);
         var parkirisca = await api.GetParkiriscaLjubljanaAsync();
 
+        if (parkirisca.Count == 0)
+        {
+            Console.WriteLine("Overpass import: 0 results.");
+            return;
+        }
+
         ctx.Parkirisca.AddRange(parkirisca);
         await ctx.SaveChangesAsync();
-        
-    }
 
+        Console.WriteLine($"Overpass import OK: imported {parkirisca.Count} parkirisca.");
+    }
+    catch (Exception ex)
+    {
+        // pomembno: app naj vseeno normalno štarta
+        Console.WriteLine("Overpass import FAILED (app will continue): " + ex.Message);
+    }
+}
 }

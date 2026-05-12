@@ -2,22 +2,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartPark.Data;
 using SmartPark.Models;
-using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
-
 
 var builder = WebApplication.CreateBuilder(args);
+
+// DbContext (samo enkrat)
+var connectionString = builder.Configuration.GetConnectionString("SmartParkContext")
+    ?? throw new InvalidOperationException("Connection string 'SmartParkContext' not found.");
+
 builder.Services.AddDbContext<SmartParkContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SmartParkContext") ?? throw new InvalidOperationException("Connection string 'SmartParkContext' not found.")));
+    options.UseSqlServer(connectionString));
 
-// Connection string
-var connectionString = builder.Configuration.GetConnectionString("SmartParkContext");
-builder.Services.AddDbContext<SmartParkContext>(options => options.UseSqlServer(connectionString));
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SmartParkContext")));
-
-// Dodaj Identity z vlogami
+// Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
         options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
@@ -32,22 +27,26 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AllowAnonymousToPage("/Account/Register");
 });
 
+builder.Services.AddScoped<SmartPark.Services.IPaymentGateway, SmartPark.Services.DemoPaymentGateway>();
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
 
 builder.Services.AddSwaggerGen();
 
-// Build aplikacijo
 var app = builder.Build();
 
-app.MapControllerRoute( name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
-
-// Inicializiraj bazo (seed)
+// Seed / Import (izvede se ob zagonu aplikacije)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    //await DbInitializer.SeedOverpassParking(services); // realna parkirišča iz Overpass
+
+    // admin + vloge (+ opcijsko demo parkirišče, če je v SeedAsync še prisotno)
+    await DbInitializer.SeedAsync(services);
+
+    // enkratni import iz Overpass -> shrani v DB samo, če je tabela prazna
+    await DbInitializer.SeedOverpassParking(services);
 }
 
 // Middleware pipeline
@@ -64,13 +63,12 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-}); 
+});
 
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 
 app.MapControllerRoute(
     name: "default",
