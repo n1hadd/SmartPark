@@ -52,11 +52,12 @@
         </a>
     </li>
 
-    @* Logout pokaži samo na Manage strani (urejanje profila) *@
+    
     @if (isManage)
     {
         <li>
             <form id="logoutForm" action="/Identity/Account/Logout?returnUrl=%2F" method="post">
+                @Html.AntiForgeryToken()
                 <button type="submit" class="sp-logout-btn">Odjava</button>
             </form>
         </li>
