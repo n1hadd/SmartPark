@@ -1,0 +1,218 @@
+﻿@model IEnumerable<SmartPark.Models.Parkirisce>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome to SmartPark</h1>
+    <div id="map" style="height: 600px; width:100%;"></div>
+</div>
+
+<!-- Modal za rezervacijo -->
+<div class="modal fade" id="rezervacijaModal" tabindex="-1" aria-labelledby="rezervacijaModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="rezervacijaForm">
+        @Html.AntiForgeryToken()
+        <div class="modal-header">
+          <h5 class="modal-title" id="rezervacijaModalLabel">Rezervacija parkirišča</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+            <input type="hidden" id="parkId" name="ParkirisceId" />
+            <input type="hidden" id="parkPrice" />
+            <input type="hidden" id="parkirnoMestoId" name="ParkirnoMestoId" />
+
+            <div class="mb-3">
+                <label class="form-label">Parkirišče</label>
+                <input type="text" id="parkNaslov" class="form-control" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Začetek</label>
+                <input type="datetime-local" id="startTime" name="DatumZacetka" class="form-control" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Konec</label>
+                <input type="datetime-local" id="endTime" name="DatumKonca" class="form-control" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Cena na uro</label>
+                <input type="text" id="parkCena" class="form-control" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Skupna cena</label>
+                <input type="text" id="totalPrice" class="form-control" readonly value="0.00 €" />
+            </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Prekliči</button>
+          <button type="submit" class="btn btn-primary">Rezerviraj</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal za plačilo -->
+<div class="modal fade" id="placiloModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Plačilo rezervacije</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rezervacijaIdHidden" />
+        <select id="paymentMethod" class="form-select">
+          <option value="card">Bančna kartica</option>
+          <option value="nalog">Plačilni nalog</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Prekliči</button>
+        <button type="button" class="btn btn-success" onclick="simulatePayment()">Plačaj</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    var map = L.map('map').setView([46.0511, 14.5051], 17);
+
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; Stadia Maps &copy; OSM',
+        maxZoom: 20
+    }).addTo(map);
+
+    var parkirisca = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model,
+        new System.Text.Json.JsonSerializerOptions {
+            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+        }
+    ));
+
+    async function fetchProstoMesto() {
+        var parkId = document.getElementById('parkId').value;
+        var start = document.getElementById('startTime').value;
+        var end = document.getElementById('endTime').value;
+        if (!parkId || !start || !end) return;
+
+        const url = `/Rezervacije/GetProstoMesto?parkirisceId=${parkId}&zacetek=${start}&konec=${end}`;
+        const res = await fetch(url);
+        const mestoId = await res.json();
+        document.getElementById('parkirnoMestoId').value = mestoId;
+    }
+
+    function showRezervacijaModal() {
+        var modal = new bootstrap.Modal(document.getElementById('rezervacijaModal'));
+        modal.show();
+    }
+
+    parkirisca.forEach(function (p) {
+        if (p.Latitude && p.Longitude) {
+            var marker = L.marker([p.Latitude, p.Longitude]).addTo(map);
+            marker.bindPopup(
+                "<b>" + p.Naslov + "</b><br>" +
+                "Cena na uro: " + p.CenaNaUro + " €<br>" +
+                "Delovni čas: " + p.DelovniCas + "<br>" +
+                "Prosta mesta: " + (p.ParkirnaMesta ? p.ParkirnaMesta.filter(m => !m.Zasedeno).length : 'N/A') +
+                "<br><button class='btn btn-sm btn-primary mt-2' onclick='openRezervacija(" + p.Id + ")'>Rezerviraj</button>"
+            );
+        }
+    });
+
+    function fillAndShowModal(p) {
+        document.getElementById('parkId').value = p.Id;
+        document.getElementById('parkNaslov').value = p.Naslov;
+        document.getElementById('parkPrice').value = p.CenaNaUro;
+        document.getElementById('parkCena').value = p.CenaNaUro + " €";
+        document.getElementById('startTime').value = "";
+        document.getElementById('endTime').value = "";
+        document.getElementById('totalPrice').value = "0.00 €";
+        document.getElementById('parkirnoMestoId').value = "";
+        document.getElementById('startTime').onchange = updateTotal;
+        document.getElementById('endTime').onchange = updateTotal;
+        showRezervacijaModal();
+    }
+
+    function openRezervacija(id) {
+        var p = parkirisca.find(x => x.Id === id);
+        if (p) fillAndShowModal(p);
+    }
+
+    function updateTotal() {
+        var start = document.getElementById('startTime').value;
+        var end = document.getElementById('endTime').value;
+        var pricePerHour = parseFloat(document.getElementById('parkPrice').value) || 0;
+        if (!start || !end) { document.getElementById('totalPrice').value = "0.00 €"; return; }
+        var diffMs = new Date(end) - new Date(start);
+        if (diffMs <= 0) { document.getElementById('totalPrice').value = "0.00 €"; return; }
+        var hours = diffMs / (1000 * 60 * 60);
+        var total = hours * pricePerHour;
+        document.getElementById('totalPrice').value = total.toFixed(2) + " €";
+        fetchProstoMesto();
+    }
+
+    // Submit rezervacije -> odpre modal za plačilo
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('rezervacijaForm');
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            fetch('/Rezervacije/Create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(new FormData(form))
+            })
+            .then(r => r.json())
+                        .then(data => {
+                if (data.success) {
+                    // shrani ID rezervacije v hidden input
+                    document.getElementById('rezervacijaIdHidden').value = data.rezervacijaId;
+
+                    // zapri modal za rezervacijo
+                    var rezervacijaModal = bootstrap.Modal.getInstance(document.getElementById('rezervacijaModal'));
+                    rezervacijaModal.hide();
+
+                    // odpri modal za plačilo
+                    var placiloModal = new bootstrap.Modal(document.getElementById('placiloModal'));
+                    placiloModal.show();
+                }
+            });
+        });
+    });
+
+    function simulatePayment() {
+        const rezervacijaId = document.getElementById("rezervacijaIdHidden").value;
+        const method = document.getElementById("paymentMethod").value;
+
+        fetch('/Placila/Create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                rezervacijaId: rezervacijaId,
+                nacinPlacila: method
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert("Plačilo uspešno! Znesek: " + data.znesek + " €");
+                window.location.href = "/Rezervacije/Index";
+            } else {
+                alert("Napaka pri plačilu ❌");
+            }
+        });
+    }
+
+</script>
+}

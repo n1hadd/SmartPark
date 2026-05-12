@@ -1,0 +1,46 @@
+@model List<SmartPark.Models.Rezervacija>
+
+<div class="container py-4">
+    <h2 class="mb-3">Moje rezervacije</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">Trenutno nimaš rezervacij.</div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+            @foreach (var r in Model)
+            {
+                var jePreteklo = r.Konec < DateTime.Now;
+                var jeAktivno = r.Zacetek <= DateTime.Now && r.Konec >= DateTime.Now;
+
+                <div class="col">
+                    <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f7f9fc, #eef3ff);">
+                        <div class="card-body">
+                            <h5 class="card-title">@r.Parkirisce?.Naslov</h5>
+                            <p class="card-text mb-2">
+                                <strong>Mesto:</strong> @r.ParkirnoMesto?.Stevilka<br />
+                                <strong>Začetek:</strong> @r.Zacetek.ToString("dd.MM.yyyy HH:mm")<br />
+                                <strong>Konec:</strong> @r.Konec.ToString("dd.MM.yyyy HH:mm")<br />
+
+                                @if (jePreteklo)
+                                {
+                                    <span class="badge bg-danger">Poteklo</span>
+                                }
+                                else if (jeAktivno)
+                                {
+                                    <span class="badge bg-success">Aktivno</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Še ni začelo</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

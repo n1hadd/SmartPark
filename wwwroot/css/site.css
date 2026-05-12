@@ -1,0 +1,200 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}
+
+/* Container */
+.navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    list-style: none;
+}
+
+/* Pills */
+.user-pill, .auth-pill, .logout-pill {
+    padding: 8px 16px;
+    border-radius: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Logged-in pill */
+.user-pill {
+    background: #eef6ff;
+    color: #0a58ca;
+    border: 1px solid #cfe2ff;
+}
+
+.user-pill:hover {
+    background: #d9eaff;
+}
+
+/* Auth buttons */
+.auth-pill {
+    background: #f4f4f4;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.auth-pill:hover {
+    background: #e9e9e9;
+}
+
+/* Logout button */
+.logout-pill {
+    background: #ffe5e5;
+    color: #b30000;
+    border: 1px solid #ffcccc;
+    cursor: pointer;
+}
+
+.logout-pill:hover {
+    background: #ffd6d6;
+}
+
+/* Celoten navbar */
+.navbar {
+    background: linear-gradient(135deg, #e8f0ff, #eef0ff);
+    border-bottom: 1px solid #d6dfff;
+    box-shadow: 0 2px 6px rgba(0, 40, 120, 0.08);
+}
+
+/* User menu container */
+.navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Pills */
+.user-pill, .auth-pill, .logout-pill {
+    padding: 8px 16px;
+    border-radius: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Logged-in user */
+.user-pill {
+    background: #ffffff;
+    color: #0a4ecb;
+    border: 1px solid #cddaff;
+    box-shadow: 0 2px 4px rgba(0, 40, 120, 0.08);
+}
+
+.user-pill:hover {
+    background: #f4f8ff;
+}
+
+/* Register/Login */
+.auth-pill {
+    background: #ffffff;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0, 40, 120, 0.05);
+}
+
+.auth-pill:hover {
+    background: #f7f7f7;
+}
+
+/* Logout */
+.logout-pill {
+    background: #ffecec;
+    color: #b30000;
+    border: 1px solid #ffcccc;
+    box-shadow: 0 2px 4px rgba(120, 0, 0, 0.08);
+}
+
+.logout-pill:hover {
+    background: #ffdede;
+}
+
+/* ===== GLOBAL ===== */
+.smartpark-body {
+    background: #f5f7ff;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ===== NAVBAR ===== */
+.smartpark-navbar {
+    background: linear-gradient(135deg, #e8f0ff, #eef0ff);
+    border-bottom: 1px solid #d6dfff;
+    box-shadow: 0 2px 6px rgba(0, 40, 120, 0.08);
+    padding: 0.75rem 1rem;
+    border-radius: 0 0 14px 14px;
+}
+
+.smartpark-brand {
+    font-weight: 700;
+    font-size: 1.35rem;
+    color: #0a4ecb !important;
+}
+
+.smartpark-navlinks .nav-link {
+    color: #2d3a55 !important;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: 10px;
+    transition: 0.2s ease;
+}
+
+.smartpark-navlinks .nav-link:hover {
+    background: #dfe8ff;
+}
+
+/* ===== MAIN CONTAINER ===== */
+.smartpark-container {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 40, 120, 0.06);
+}
+
+/* ===== FOOTER ===== */
+.smartpark-footer {
+    background: #eef1ff;
+    border-top: 1px solid #d6dfff;
+    padding: 12px 0;
+    text-align: center;
+    color: #4a4a4a;
+    margin-top: 40px;
+    border-radius: 14px 14px 0 0;
+}
+
