@@ -140,8 +140,8 @@
             border-radius: 18px;
             padding: 14px 16px;
             box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
-            display: grid;
-            grid-template-columns: 1fr minmax(420px, 620px) auto;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
             gap: 12px;
             margin-bottom: 16px;
@@ -252,23 +252,6 @@
                     <h1>@ViewData["Title"]</h1>
                     <p class="subtitle">Dobrodošel!</p>
                 </div>
-
-                @{
-                    // Home page je "/" ali "/Home" ali "/Home/Index"
-                    var p = (Context.Request.Path.Value ?? "").ToLowerInvariant();
-                    var isHome = p == "/" || p.StartsWith("/home");
-                }
-
-                @if (isHome)
-                {
-                    <div class="sp-search">
-                        <input id="spSearchInput" type="text" placeholder="Išči parkirišča (npr. Center)..." />
-                    </div>
-                }
-                else
-                {
-                    <div></div> @* placeholder da grid ostane poravnan *@
-                }
 
                 <div style="font-size:12px; color:#6b7280; font-weight:850;">
                     @DateTime.Now.ToString("yyyy-MM-dd")

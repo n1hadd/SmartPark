@@ -5,88 +5,120 @@
 }
 
 <div class="sp-card sp-map-wrap">
-  <div id="map" style="height: 600px; width:100%; border-radius:16px; overflow:hidden;"></div>
-</div>
+    <div class="d-flex gap-2 mb-3 align-items-end flex-wrap">
+        <div style="min-width:280px; flex:1;">
+            <label class="form-label mb-1" style="margin-left: 7px; font-weight: bold;">Išči lokacijo</label>
+            <input id="spLocalSearch" class="form-control" placeholder="npr. Kongresni trg" />
+        </div>
 
+        <div style="width:180px;">
+            <label class="form-label mb-1" style="margin-left: 7px; font-weight: bold;">Max €/h</label>
+            <input id="spMaxPrice" type="number" step="0.1" min="0" class="form-control" placeholder="npr. 3.0" />
+        </div>
+
+        <div>
+            <button type="button" class="btn btn-outline-secondary" id="spClearFilters">Počisti</button>
+        </div>
+    </div>
+
+   <div id="map" style="height: 600px; width:100%; border-radius:16px; overflow:hidden;"></div>
+</div>
 <!-- Modal za rezervacijo -->
 <div class="modal fade" id="rezervacijaModal" tabindex="-1" aria-labelledby="rezervacijaModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="rezervacijaForm">
-        @Html.AntiForgeryToken()
-        <div class="modal-header">
-          <h5 class="modal-title" id="rezervacijaModalLabel">Rezervacija parkirišča</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zapri"></button>
-        </div>
-
-        <div class="modal-body">
-            <input type="hidden" id="parkId" name="ParkirisceId" />
-            <input type="hidden" id="parkPrice" />
-            <input type="hidden" id="parkirnoMestoId" name="ParkirnoMestoId" />
-
-            <div class="mb-3">
-                <label class="form-label">Parkirišče</label>
-                <input type="text" id="parkNaslov" class="form-control" readonly />
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <form id="rezervacijaForm">
+            @Html.AntiForgeryToken()
+            <div class="modal-header">
+               <h5 class="modal-title" id="rezervacijaModalLabel">Rezervacija parkirišča</h5>
+               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zapri"></button>
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Začetek</label>
-                <input type="datetime-local" id="startTime" name="DatumZacetka" class="form-control" required />
+            <div class="modal-body">
+               <input type="hidden" id="parkId" name="ParkirisceId" />
+               <input type="hidden" id="parkPrice" />
+               <input type="hidden" id="parkirnoMestoId" name="ParkirnoMestoId" />
+               <div class="mb-3">
+                  <label class="form-label">Parkirišče</label>
+                  <input type="text" id="parkNaslov" class="form-control" readonly />
+               </div>
+               <div class="mb-3">
+                  <label class="form-label">Začetek</label>
+                  <input type="datetime-local" id="startTime" name="DatumZacetka" class="form-control" required />
+               </div>
+               <div class="mb-3">
+                  <label class="form-label">Konec</label>
+                  <input type="datetime-local" id="endTime" name="DatumKonca" class="form-control" required />
+               </div>
+               <div class="mb-3">
+                  <label class="form-label">Cena na uro</label>
+                  <input type="text" id="parkCena" class="form-control" readonly />
+               </div>
+               <div class="mb-3">
+                  <label class="form-label">Skupna cena</label>
+                  <input type="text" id="totalPrice" class="form-control" readonly value="0.00 €" />
+               </div>
+               <div class="alert alert-info py-2 mb-0" id="availabilityInfo">
+                  Izberi začetek in konec za preverjanje prostih mest.
+               </div>
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Konec</label>
-                <input type="datetime-local" id="endTime" name="DatumKonca" class="form-control" required />
+            <div class="modal-footer">
+               <!-- NOVO: cancel gumb -->
+               <button type="button" class="btn btn-outline-secondary" id="cancelRezervacijaBtn">Prekliči</button>
+               <!-- submit gumb: bo disable dokler ni prostega mesta -->
+               <button type="submit" class="btn btn-primary" id="submitRezervacijaBtn" disabled>Rezerviraj</button>
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Cena na uro</label>
-                <input type="text" id="parkCena" class="form-control" readonly />
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Skupna cena</label>
-                <input type="text" id="totalPrice" class="form-control" readonly value="0.00 €" />
-            </div>
-
-            <div class="alert alert-info py-2 mb-0" id="availabilityInfo">
-                Izberi začetek in konec za preverjanje prostih mest.
-            </div>
-        </div>
-
-        <div class="modal-footer">
-          <!-- NOVO: cancel gumb -->
-          <button type="button" class="btn btn-outline-secondary" id="cancelRezervacijaBtn">Prekliči</button>
-
-          <!-- submit gumb: bo disable dokler ni prostega mesta -->
-          <button type="submit" class="btn btn-primary" id="submitRezervacijaBtn" disabled>Rezerviraj</button>
-        </div>
-      </form>
-    </div>
-  </div>
+         </form>
+      </div>
+   </div>
 </div>
-
 <!-- Modal za plačilo -->
 <div class="modal fade" id="placiloModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Plačilo rezervacije</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zapri"></button>
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title">Plačilo rezervacije</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zapri"></button>
+         </div>
+         <div class="modal-body">
+            <input type="hidden" id="rezervacijaIdHidden" />
+            <div class="mb-3">
+               <label class="form-label">Način plačila</label>
+               <select id="paymentMethod" class="form-select">
+                  <option value="card">Bančna kartica</option>
+                  <option value="nalog">Plačilni nalog</option>
+               </select>
+            </div>
+            
+            <div id="cardFields" style="display:none;">
+               <div class="mb-2">
+                  <label class="form-label">Ime na kartici</label>
+                  <input id="cardName" class="form-control" autocomplete="cc-name" />
+               </div>
+               <div class="mb-2">
+                  <label class="form-label">Številka kartice</label>
+                  <input id="cardNumber" class="form-control" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" />
+               </div>
+               <div class="row">
+                  <div class="col-6 mb-2">
+                     <label class="form-label">Veljavnost (MM/YY)</label>
+                     <input id="cardExp" class="form-control" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" />
+                  </div>
+                  <div class="col-6 mb-2">
+                     <label class="form-label">CVV</label>
+                     <input id="cardCvv" class="form-control" inputmode="numeric" autocomplete="cc-csc" placeholder="123" />
+                  </div>
+               </div>
+               <div class="small text-muted">
+                  Opomba: To je demo validacija (ne izvaja prave transakcije).
+               </div>
+            </div>
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Prekliči</button>
+            <button type="button" class="btn btn-success" onclick="simulatePayment()">Plačaj</button>
+         </div>
       </div>
-      <div class="modal-body">
-        <input type="hidden" id="rezervacijaIdHidden" />
-        <select id="paymentMethod" class="form-select">
-          <option value="card">Bančna kartica</option>
-          <option value="nalog">Plačilni nalog</option>
-        </select>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Prekliči</button>
-        <button type="button" class="btn btn-success" onclick="simulatePayment()">Plačaj</button>
-      </div>
-    </div>
-  </div>
+   </div>
 </div>
 
 @section Scripts {
@@ -165,16 +197,58 @@
         modal.show();
     }
 
+    var spMarkers = [];
+
     parkirisca.forEach(function (p) {
         if (p.Latitude && p.Longitude) {
             var marker = L.marker([p.Latitude, p.Longitude]).addTo(map);
+
             marker.bindPopup(
-                "<b>" + p.Naslov + "</b><br>" +
-                "Cena na uro: " + p.CenaNaUro + " €<br>" +
-                "Delovni čas: " + p.DelovniCas + "<br>" +
-                "Prosta mesta: " + (p.ParkirnaMesta ? p.ParkirnaMesta.filter(m => !m.Zasedeno).length : 'N/A') +
-                "<br><button class='btn btn-sm btn-primary mt-2' onclick='openRezervacija(" + p.Id + ")'>Rezerviraj</button>"
+            "<b>" + p.Naslov + "</b><br>" +
+            "Cena na uro: " + p.CenaNaUro + " €<br>" +
+            "Delovni čas: " + p.DelovniCas + "<br>" +
+            "Prosta mesta: " + (p.ParkirnaMesta ? p.ParkirnaMesta.filter(m => !m.Zasedeno).length : 'N/A') +
+            "<br><button class='btn btn-sm btn-primary mt-2' onclick='openRezervacija(" + p.Id + ")'>Rezerviraj</button>"
             );
+
+            spMarkers.push({
+            id: p.Id,
+            title: (p.Naslov || ""),
+            price: Number(p.CenaNaUro || 0),
+            marker: marker
+            });
+        }
+    });
+
+    function applyFilters() {
+        const q = (document.getElementById("spLocalSearch")?.value || "").toLowerCase().trim();
+        const maxPriceRaw = (document.getElementById("spMaxPrice")?.value || "").trim();
+        const maxPrice = maxPriceRaw ? Number(maxPriceRaw) : null;
+
+        spMarkers.forEach(x => {
+            const matchText = !q || (x.title || "").toLowerCase().includes(q);
+            const matchPrice = (maxPrice == null) || (x.price <= maxPrice);
+
+            const visible = matchText && matchPrice;
+            if (visible) x.marker.addTo(map);
+            else map.removeLayer(x.marker);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const s = document.getElementById("spLocalSearch");
+        const p = document.getElementById("spMaxPrice");
+        const c = document.getElementById("spClearFilters");
+
+        if (s) s.addEventListener("input", applyFilters);
+        if (p) p.addEventListener("input", applyFilters);
+
+        if (c) {
+            c.addEventListener("click", function () {
+            if (s) s.value = "";
+            if (p) p.value = "";
+            applyFilters();
+            });
         }
     });
 
@@ -298,24 +372,73 @@
         const rezervacijaId = document.getElementById("rezervacijaIdHidden").value;
         const method = document.getElementById("paymentMethod").value;
 
+        if (!rezervacijaId) {
+            alert("Manjka ID rezervacije. Najprej izvedi rezervacijo.");
+            return;
+        }
+
+        if (method === "card") {
+            const err = validateCardFields();
+            if (err) { alert(err); return; }
+        }
+
         fetch('/Placila/Create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                rezervacijaId: rezervacijaId,
-                nacinPlacila: method
-            })
+            body: JSON.stringify({ rezervacijaId: rezervacijaId, nacinPlacila: method })
         })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                alert("Plačilo uspešno! Znesek: " + data.znesek + " €");
-                window.location.href = "/Rezervacije/Index";
+        .then(async r => {
+            const text = await r.text();
+            let data = null;
+            try { data = JSON.parse(text); } catch {}
+
+            if (!r.ok) {
+            console.error("Placila/Create failed:", r.status, text);
+            alert((data && data.message) ? data.message : ("Napaka pri plačilu (HTTP " + r.status + ")."));
+            return;
+            }
+
+            if (data && data.success) {
+            alert("Plačilo uspešno! Znesek: " + data.znesek + " €");
+            window.location.href = "/Rezervacije/Index";
             } else {
-                alert(data.message || "Napaka pri plačilu ❌");
+            alert((data && data.message) ? data.message : "Napaka pri plačilu ❌");
             }
         })
         .catch(() => alert("Napaka pri komunikaciji s strežnikom."));
     }
+
+    function normalizeCardNumber(v) {
+        return (v || "").replace(/\s+/g, "");
+    }
+
+    function validateCardFields() {
+        const name = (document.getElementById("cardName").value || "").trim();
+        const number = normalizeCardNumber(document.getElementById("cardNumber").value);
+        const exp = (document.getElementById("cardExp").value || "").trim();
+        const cvv = (document.getElementById("cardCvv").value || "").trim();
+
+        if (!name) return "Vnesi ime na kartici.";
+        if (!/^\d{16}$/.test(number)) return "Številka kartice mora imeti 16 številk.";
+        if (!/^\d{2}\/\d{2}$/.test(exp)) return "Veljavnost mora biti v obliki MM/YY.";
+        const mm = parseInt(exp.substring(0,2), 10);
+        if (isNaN(mm) || mm < 1 || mm > 12) return "Mesec veljavnosti mora biti med 01 in 12.";
+        if (!/^\d{3}$/.test(cvv)) return "CVV mora imeti 3 številke.";
+        return null;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const paymentMethod = document.getElementById("paymentMethod");
+        const cardFields = document.getElementById("cardFields");
+
+        if (paymentMethod && cardFields) {
+            const sync = () => {
+            cardFields.style.display = (paymentMethod.value === "card") ? "" : "none";
+            };
+            paymentMethod.addEventListener("change", sync);
+            sync();
+        }
+    });
+
 </script>
 }
