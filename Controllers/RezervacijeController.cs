@@ -17,7 +17,6 @@ namespace SmartPark.Controllers
             _userManager = userManager;
         }
 
-        // 📌 Seznam rezervacij za prijavljenega uporabnika
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -36,12 +35,14 @@ namespace SmartPark.Controllers
             return View(rezervacije);
         }
 
-        // 📌 API endpoint za prvo prosto parkirno mesto
         [HttpGet]
         public async Task<IActionResult> GetProstoMesto(int parkirisceId, DateTime zacetek, DateTime konec)
         {
-            var mesto = await _context.ParkirnaMesta
-                .Where(pm => pm.ParkirisceId == parkirisceId && pm.Zasedeno == false)
+            if (konec <= zacetek)
+                return Json(0);
+
+            var mestoId = await _context.ParkirnaMesta
+                .Where(pm => pm.ParkirisceId == parkirisceId)
                 .Where(pm => !_context.Rezervacije.Any(r =>
                     r.ParkirnoMestoId == pm.Id &&
                     r.Zacetek < konec &&
@@ -50,16 +51,33 @@ namespace SmartPark.Controllers
                 .Select(pm => pm.Id)
                 .FirstOrDefaultAsync();
 
-            return Json(mesto);
+            return Json(mestoId); // 0 pomeni "ni prostih"
         }
 
-        // 📌 Create rezervacije (brez plačila)
         [HttpPost]
         public async Task<IActionResult> Create(int ParkirisceId, int ParkirnoMestoId, DateTime DatumZacetka, DateTime DatumKonca)
         {
             var userId = _userManager.GetUserId(User);
             if (userId == null)
                 return Unauthorized();
+
+            if (DatumKonca <= DatumZacetka)
+                return BadRequest(new { success = false, message = "Neveljaven časovni interval." });
+
+            var pm = await _context.ParkirnaMesta.FirstOrDefaultAsync(x => x.Id == ParkirnoMestoId);
+            if (pm == null)
+                return BadRequest(new { success = false, message = $"Parkirno mesto {ParkirnoMestoId} ne obstaja." });
+
+            if (pm.ParkirisceId != ParkirisceId)
+                return BadRequest(new { success = false, message = "Izbrano parkirno mesto ne pripada izbranemu parkirišču." });
+
+            var zasedenoVTerminu = await _context.Rezervacije.AnyAsync(r =>
+                r.ParkirnoMestoId == ParkirnoMestoId &&
+                r.Zacetek < DatumKonca &&
+                r.Konec > DatumZacetka);
+
+            if (zasedenoVTerminu)
+                return BadRequest(new { success = false, message = "Za izbrani termin ni prostih mest. Poskusi drug termin." });
 
             var rezervacija = new Rezervacija
             {
@@ -71,23 +89,37 @@ namespace SmartPark.Controllers
                 DateCreated = DateTime.Now
             };
 
-            var pm = await _context.ParkirnaMesta.FindAsync(ParkirnoMestoId);
-            if (pm == null)
-                return BadRequest($"Parkirno mesto {ParkirnoMestoId} ne obstaja.");
+            pm.Zasedeno = true;
 
-            if (pm.ParkirisceId != ParkirisceId)
-                return BadRequest($"Parkirno mesto {ParkirnoMestoId} ne pripada parkirišču {ParkirisceId}.");
-
-            // 🔥 Dodamo rezervacijo
             _context.Rezervacije.Add(rezervacija);
             await _context.SaveChangesAsync();
 
-            // Vrni JSON, da frontend lahko odpre modal za plačilo
-            return Json(new
-            {
-                success = true,
-                rezervacijaId = rezervacija.Id
-            });
+            return Json(new { success = true, rezervacijaId = rezervacija.Id });
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            if (userId == null)
+                return Unauthorized();
+
+            var rez = await _context.Rezervacije
+                .Include(r => r.ParkirnoMesto)
+                .FirstOrDefaultAsync(r => r.Id == id && r.ApplicationUserId == userId);
+
+            if (rez == null)
+                return NotFound();
+
+            if (rez.ParkirnoMesto != null)
+                rez.ParkirnoMesto.Zasedeno = false;
+
+            _context.Rezervacije.Remove(rez);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

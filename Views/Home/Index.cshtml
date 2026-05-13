@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<SmartPark.Models.Parkirisce>
 
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Domov";
 }
 
 <div class="sp-card sp-map-wrap">
@@ -16,7 +16,7 @@
         @Html.AntiForgeryToken()
         <div class="modal-header">
           <h5 class="modal-title" id="rezervacijaModalLabel">Rezervacija parkirišča</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zapri"></button>
         </div>
 
         <div class="modal-body">
@@ -48,11 +48,18 @@
                 <label class="form-label">Skupna cena</label>
                 <input type="text" id="totalPrice" class="form-control" readonly value="0.00 €" />
             </div>
+
+            <div class="alert alert-info py-2 mb-0" id="availabilityInfo">
+                Izberi začetek in konec za preverjanje prostih mest.
+            </div>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Prekliči</button>
-          <button type="submit" class="btn btn-primary">Rezerviraj</button>
+          <!-- NOVO: cancel gumb -->
+          <button type="button" class="btn btn-outline-secondary" id="cancelRezervacijaBtn">Prekliči</button>
+
+          <!-- submit gumb: bo disable dokler ni prostega mesta -->
+          <button type="submit" class="btn btn-primary" id="submitRezervacijaBtn" disabled>Rezerviraj</button>
         </div>
       </form>
     </div>
@@ -65,7 +72,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Plačilo rezervacije</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zapri"></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="rezervacijaIdHidden" />
@@ -100,16 +107,57 @@
         }
     ));
 
+    function setAvailability(message, type) {
+        const el = document.getElementById('availabilityInfo');
+        const btn = document.getElementById('submitRezervacijaBtn');
+
+        el.classList.remove('alert-info', 'alert-success', 'alert-danger');
+        el.classList.add(type === 'ok' ? 'alert-success' : type === 'bad' ? 'alert-danger' : 'alert-info');
+        el.textContent = message;
+
+        // enable submit samo, če imamo veljavno mestoId
+        const mestoId = document.getElementById('parkirnoMestoId').value;
+        btn.disabled = (!mestoId || mestoId === "0");
+    }
+
     async function fetchProstoMesto() {
         var parkId = document.getElementById('parkId').value;
         var start = document.getElementById('startTime').value;
         var end = document.getElementById('endTime').value;
-        if (!parkId || !start || !end) return;
 
-        const url = `/Rezervacije/GetProstoMesto?parkirisceId=${parkId}&zacetek=${start}&konec=${end}`;
-        const res = await fetch(url);
-        const mestoId = await res.json();
-        document.getElementById('parkirnoMestoId').value = mestoId;
+        // reset pri nepopolnih podatkih
+        document.getElementById('parkirnoMestoId').value = "0";
+        document.getElementById('submitRezervacijaBtn').disabled = true;
+
+        if (!parkId || !start || !end) {
+            setAvailability("Izberi začetek in konec za preverjanje prostih mest.", "info");
+            return;
+        }
+
+        // validacija na frontendu
+        var diffMs = new Date(end) - new Date(start);
+        if (diffMs <= 0) {
+            setAvailability("Neveljaven interval (konec mora biti po začetku).", "bad");
+            return;
+        }
+
+        const url = `/Rezervacije/GetProstoMesto?parkirisceId=${encodeURIComponent(parkId)}&zacetek=${encodeURIComponent(start)}&konec=${encodeURIComponent(end)}`;
+
+        try {
+            const res = await fetch(url);
+            const mestoId = await res.json();
+
+            document.getElementById('parkirnoMestoId').value = (mestoId ?? 0).toString();
+
+            if (!mestoId || mestoId === 0) {
+                setAvailability("Ni prostih mest za izbrani termin. Poskusi drug termin.", "bad");
+            } else {
+                setAvailability("Prosto mesto je na voljo.", "ok");
+            }
+        } catch (e) {
+            console.error(e);
+            setAvailability("Napaka pri preverjanju prostih mest.", "bad");
+        }
     }
 
     function showRezervacijaModal() {
@@ -130,17 +178,36 @@
         }
     });
 
+    function resetRezervacijaForm() {
+        document.getElementById('parkId').value = "";
+        document.getElementById('parkNaslov').value = "";
+        document.getElementById('parkPrice').value = "";
+        document.getElementById('parkCena').value = "";
+        document.getElementById('startTime').value = "";
+        document.getElementById('endTime').value = "";
+        document.getElementById('totalPrice').value = "0.00 €";
+        document.getElementById('parkirnoMestoId').value = "0";
+        document.getElementById('submitRezervacijaBtn').disabled = true;
+        setAvailability("Izberi začetek in konec za preverjanje prostih mest.", "info");
+    }
+
     function fillAndShowModal(p) {
         document.getElementById('parkId').value = p.Id;
         document.getElementById('parkNaslov').value = p.Naslov;
         document.getElementById('parkPrice').value = p.CenaNaUro;
         document.getElementById('parkCena').value = p.CenaNaUro + " €";
+
         document.getElementById('startTime').value = "";
         document.getElementById('endTime').value = "";
         document.getElementById('totalPrice').value = "0.00 €";
-        document.getElementById('parkirnoMestoId').value = "";
+        document.getElementById('parkirnoMestoId').value = "0";
+
         document.getElementById('startTime').onchange = updateTotal;
         document.getElementById('endTime').onchange = updateTotal;
+
+        document.getElementById('submitRezervacijaBtn').disabled = true;
+        setAvailability("Izberi začetek in konec za preverjanje prostih mest.", "info");
+
         showRezervacijaModal();
     }
 
@@ -153,11 +220,23 @@
         var start = document.getElementById('startTime').value;
         var end = document.getElementById('endTime').value;
         var pricePerHour = parseFloat(document.getElementById('parkPrice').value) || 0;
-        if (!start || !end) { document.getElementById('totalPrice').value = "0.00 €"; return; }
+
+        if (!start || !end) {
+            document.getElementById('totalPrice').value = "0.00 €";
+            fetchProstoMesto();
+            return;
+        }
+
         var diffMs = new Date(end) - new Date(start);
-        if (diffMs <= 0) { document.getElementById('totalPrice').value = "0.00 €"; return; }
+        if (diffMs <= 0) {
+            document.getElementById('totalPrice').value = "0.00 €";
+            fetchProstoMesto();
+            return;
+        }
+
         var hours = diffMs / (1000 * 60 * 60);
         var total = hours * pricePerHour;
+
         document.getElementById('totalPrice').value = total.toFixed(2) + " €";
         fetchProstoMesto();
     }
@@ -165,28 +244,53 @@
     // Submit rezervacije -> odpre modal za plačilo
     document.addEventListener('DOMContentLoaded', function () {
         var form = document.getElementById('rezervacijaForm');
+
+        function getAntiForgeryToken() {
+            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+            return tokenInput ? tokenInput.value : "";
+        }
+
+        // NOVO: Cancel gumb zapre modal in resetira
+        document.getElementById('cancelRezervacijaBtn').addEventListener('click', function () {
+            resetRezervacijaForm();
+            const modalEl = document.getElementById('rezervacijaModal');
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
+        });
+
         form.addEventListener('submit', function (e) {
             e.preventDefault();
+
+            // D) blokada submit, če je 0
+            const mestoId = document.getElementById('parkirnoMestoId').value;
+            if (!mestoId || mestoId === "0") {
+                alert("Ni prostih mest za izbrani termin. Izberi drug termin ali drugo parkirišče.");
+                return;
+            }
+
             fetch('/Rezervacije/Create', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': getAntiForgeryToken()
+                },
                 body: new URLSearchParams(new FormData(form))
             })
             .then(r => r.json())
-                        .then(data => {
+            .then(data => {
                 if (data.success) {
-                    // shrani ID rezervacije v hidden input
                     document.getElementById('rezervacijaIdHidden').value = data.rezervacijaId;
 
-                    // zapri modal za rezervacijo
                     var rezervacijaModal = bootstrap.Modal.getInstance(document.getElementById('rezervacijaModal'));
                     rezervacijaModal.hide();
 
-                    // odpri modal za plačilo
                     var placiloModal = new bootstrap.Modal(document.getElementById('placiloModal'));
                     placiloModal.show();
+                } else {
+                    alert(data.message || "Rezervacija ni uspela.");
                 }
-            });
+            })
+            .catch(() => alert("Napaka pri komunikaciji s strežnikom."));
         });
     });
 
@@ -208,10 +312,10 @@
                 alert("Plačilo uspešno! Znesek: " + data.znesek + " €");
                 window.location.href = "/Rezervacije/Index";
             } else {
-                alert("Napaka pri plačilu ❌");
+                alert(data.message || "Napaka pri plačilu ❌");
             }
-        });
+        })
+        .catch(() => alert("Napaka pri komunikaciji s strežnikom."));
     }
-
 </script>
 }

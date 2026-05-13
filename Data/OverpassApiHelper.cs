@@ -29,15 +29,14 @@ namespace SmartPark.Data
 
         public async Task<List<Parkirisce>> GetParkiriscaLjubljanaAsync()
         {
-             string query = @"[out:json];
+            string query = @"[out:json];
                             area[""name""=""Ljubljana""]->.searchArea;
                             (
                               node[""amenity""=""parking""][""name""](area.searchArea);
                               way[""amenity""=""parking""][""name""](area.searchArea);
                             );
                             out center;";
-
-            // POST je bolj robusten kot GET
+                            
             using var content = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("data", query)
@@ -87,13 +86,19 @@ namespace SmartPark.Data
                         int.TryParse(capElem.GetString(), out steviloMest);
                 }
 
+                if (steviloMest <= 0)
+                    steviloMest = 30;
+
+                var rng = Random.Shared;
+                var demoCena = Math.Round((decimal)(1.2 + rng.NextDouble() * 2.8), 2); // 1.20–4.00
+
                 parkirisca.Add(new Parkirisce
                 {
                     Naslov = naslov,
                     Latitude = lat,
                     Longitude = lon,
                     SteviloMest = steviloMest,
-                    CenaNaUro = 2.5m,
+                    CenaNaUro = demoCena,
                     DelovniCas = "00:00–24:00"
                 });
             }

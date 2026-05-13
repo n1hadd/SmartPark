@@ -141,7 +141,7 @@
             padding: 14px 16px;
             box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
             display: grid;
-            grid-template-columns: 1fr minmax(380px, 1.6fr) auto;
+            grid-template-columns: 1fr minmax(420px, 620px) auto;
             align-items: center;
             gap: 12px;
             margin-bottom: 16px;
@@ -218,23 +218,26 @@
             </div>
 
             @{
-                var path = Context.Request.Path.Value ?? "";
-                string ActiveIf(string startsWith) =>
-                path.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+                var path = (Context.Request.Path.Value ?? "").ToLowerInvariant();
+
+                string ActiveExact(string exact) =>
+                path == exact.ToLowerInvariant() ? "active" : "";
+
+                string ActivePrefix(string prefix) =>
+                path.StartsWith(prefix.ToLowerInvariant()) ? "active" : "";
             }
 
             <nav class="sp-nav">
-                <a class="@ActiveIf("/")" asp-controller="Home" asp-action="Index">Domov</a>
+                <a class="@ActiveExact("/")" asp-controller="Home" asp-action="Index">Domov</a>
 
                 @if (User.Identity?.IsAuthenticated ?? false)
                 {
-                    <a class="@ActiveIf("/Rezervacije")" asp-controller="Rezervacije" asp-action="Index">Moje
-                        rezervacije</a>
+                    <a class="@ActivePrefix("/rezervacije")" asp-controller="Rezervacije" asp-action="Index">Moje rezervacije</a>
                 }
 
                 @if (User.IsInRole("Administrator"))
                 {
-                    <a class="@ActiveIf("/admin/parkirisca")" href="/admin/parkirisca">Admin panel</a>
+                    <a class="@ActivePrefix("/admin/parkirisca")" href="/admin/parkirisca">Admin panel</a>
                 }
             </nav>
 
@@ -259,7 +262,6 @@
                 @if (isHome)
                 {
                     <div class="sp-search">
-                        <span style="font-weight:900; color:#6b7280;">🔎</span>
                         <input id="spSearchInput" type="text" placeholder="Išči parkirišča (npr. Center)..." />
                     </div>
                 }

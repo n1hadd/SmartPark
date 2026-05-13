@@ -20,34 +20,62 @@ namespace SmartPark.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] PlaciloRequest request)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return Unauthorized();
-
-            var rezervacija = await _context.Rezervacije
-                .Include(r => r.Parkirisce)
-                .FirstOrDefaultAsync(r => r.Id == request.rezervacijaId && r.ApplicationUserId == userId);
-
-            if (rezervacija == null)
-                return NotFound(new { success = false, message = "Rezervacija ne obstaja ali ne pripada uporabniku." });
-
-            var trajanjeUr = (rezervacija.Konec - rezervacija.Zacetek).TotalHours;
-            var cenaNaUro = rezervacija.Parkirisce?.CenaNaUro ?? 2.0m;
-            var znesek = (decimal)trajanjeUr * cenaNaUro;
-
-            var placilo = new Placilo
+            try
             {
-                RezervacijaId = rezervacija.Id,
-                ApplicationUserId = userId,
-                Znesek = znesek,
-                NacinPlacila = request.nacinPlacila ?? "Kartica",
-                Datum = DateTime.Now
-            };
+                if (request == null || request.rezervacijaId <= 0)
+                    return BadRequest(new { success = false, message = "Neveljaven zahtevek za plačilo." });
 
-            _context.Placila.Add(placilo);
-            await _context.SaveChangesAsync();
+                var userId = _userManager.GetUserId(User);
+                if (userId == null)
+                    return Unauthorized(new { success = false, message = "Uporabnik ni prijavljen." });
 
-            return Json(new { success = true, rezervacijaId = rezervacija.Id, znesek });
+                var rezervacija = await _context.Rezervacije
+                    .Include(r => r.Parkirisce)
+                    .FirstOrDefaultAsync(r => r.Id == request.rezervacijaId && r.ApplicationUserId == userId);
+
+                if (rezervacija == null)
+                    return NotFound(new { success = false, message = "Rezervacija ne obstaja ali ne pripada uporabniku." });
+
+                // Pomembno: validacija časov
+                var zacetek = rezervacija.Zacetek;
+                var konec = rezervacija.Konec;
+
+                if (konec <= zacetek)
+                    return BadRequest(new { success = false, message = "Neveljaven časovni interval rezervacije." });
+
+                var trajanjeUr = (konec - zacetek).TotalHours;
+
+                var cenaNaUro = rezervacija.Parkirisce?.CenaNaUro ?? 2.5m;
+                var znesek = Math.Round((decimal)trajanjeUr * cenaNaUro, 2);
+
+                // lep “display” način plačila
+                var nacin = (request.nacinPlacila ?? "card").ToLowerInvariant();
+                var nacinDisplay = nacin switch
+                {
+                    "card" => "Bančna kartica",
+                    "nalog" => "Plačilni nalog",
+                    _ => request.nacinPlacila ?? "Bančna kartica"
+                };
+
+                var placilo = new Placilo
+                {
+                    RezervacijaId = rezervacija.Id,
+                    ApplicationUserId = userId,
+                    Znesek = znesek,
+                    NacinPlacila = nacinDisplay,
+                    Datum = DateTime.Now
+                };
+
+                _context.Placila.Add(placilo);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, rezervacijaId = rezervacija.Id, znesek });
+            }
+            catch (Exception ex)
+            {
+                // ključ: vedno JSON (da front-end ne pade na r.json())
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
         }
     }
 
