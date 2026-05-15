@@ -55,16 +55,17 @@ namespace SmartPark.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(Input.Email);
+
                 if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
                 {
-                    // Don't reveal that the user does not exist or is not confirmed
+                    // Ne razkrijemo, ali uporabnik ne obstaja ali e-poštni naslov ni potrjen.
                     return RedirectToPage("./ForgotPasswordConfirmation");
                 }
 
-                // For more information on how to enable account confirmation and password reset please
-                // visit https://go.microsoft.com/fwlink/?LinkID=532713
+                // Ustvarimo žeton za ponastavitev gesla.
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
                 var callbackUrl = Url.Page(
                     "/Account/ResetPassword",
                     pageHandler: null,
@@ -73,8 +74,8 @@ namespace SmartPark.Areas.Identity.Pages.Account
 
                 await _emailSender.SendEmailAsync(
                     Input.Email,
-                    "Reset Password",
-                    $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    "Ponastavitev gesla",
+                    $"Za ponastavitev gesla kliknite <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>tukaj</a>.");
 
                 return RedirectToPage("./ForgotPasswordConfirmation");
             }

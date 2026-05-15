@@ -1,0 +1,44 @@
+@model List<SmartPark.Models.Placilo>
+
+@{
+    ViewData["Title"] = "Plačila";
+}
+
+<div class="container py-4">
+    <h2 class="mb-3">Plačila</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">Trenutno ni nobenih plačil.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Datum</th>
+                        <th>Znesek</th>
+                        <th>Način</th>
+                        <th>Rezervacija</th>
+                        <th>Parkirišče</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td>@p.Id</td>
+                        <td>@p.Datum.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@p.Znesek.ToString("0.00") €</td>
+                        <td>@p.NacinPlacila</td>
+                        <td>#@p.RezervacijaId</td>
+                        <td>@p.Rezervacija?.Parkirisce?.Naslov</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

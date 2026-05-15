@@ -86,7 +86,7 @@ namespace SmartPark.Areas.Identity.Pages.Account
             [EmailAddress]
             public string Email { get; set; }
         }
-        
+
         public IActionResult OnGet() => RedirectToPage("./Login");
 
         public IActionResult OnPost(string provider, string returnUrl = null)
@@ -102,32 +102,44 @@ namespace SmartPark.Areas.Identity.Pages.Account
             returnUrl = returnUrl ?? Url.Content("~/");
             if (remoteError != null)
             {
-                ErrorMessage = $"Error from external provider: {remoteError}";
-                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
-            }
-            var info = await _signInManager.GetExternalLoginInfoAsync();
-            if (info == null)
-            {
-                ErrorMessage = "Error loading external login information.";
+                ErrorMessage = $"Napaka zunanjega ponudnika: {remoteError}";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
 
-            // Sign in the user with this external login provider if the user already has a login.
-            var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                ErrorMessage = "Napaka pri nalaganju podatkov za zunanjo prijavo.";
+                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+            }
+
+            // Prijava uporabnika prek zunanjega ponudnika, če račun že obstaja.
+            var result = await _signInManager.ExternalLoginSignInAsync(
+                info.LoginProvider,
+                info.ProviderKey,
+                isPersistent: false,
+                bypassTwoFactor: true);
+
             if (result.Succeeded)
             {
-                _logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity.Name, info.LoginProvider);
+                _logger.LogInformation(
+                    "{Name} se je prijavil prek ponudnika {LoginProvider}.",
+                    info.Principal.Identity.Name,
+                    info.LoginProvider);
+
                 return LocalRedirect(returnUrl);
             }
+
             if (result.IsLockedOut)
             {
                 return RedirectToPage("./Lockout");
             }
             else
             {
-                // If the user does not have an account, then ask the user to create an account.
+                // Če uporabnik še nima računa, prikažemo obrazec za ustvarjanje računa.
                 ReturnUrl = returnUrl;
                 ProviderDisplayName = info.ProviderDisplayName;
+
                 if (info.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
                 {
                     Input = new InputModel
@@ -135,6 +147,7 @@ namespace SmartPark.Areas.Identity.Pages.Account
                         Email = info.Principal.FindFirstValue(ClaimTypes.Email)
                     };
                 }
+
                 return Page();
             }
         }
@@ -142,11 +155,12 @@ namespace SmartPark.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostConfirmationAsync(string returnUrl = null)
         {
             returnUrl = returnUrl ?? Url.Content("~/");
-            // Get the information about the user from the external login provider
+
+            // Pridobimo podatke uporabnika od zunanjega ponudnika.
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
-                ErrorMessage = "Error loading external login information during confirmation.";
+                ErrorMessage = "Napaka pri nalaganju podatkov za zunanjo prijavo med potrditvijo.";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
 
@@ -163,30 +177,46 @@ namespace SmartPark.Areas.Identity.Pages.Account
                     result = await _userManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {
-                        _logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
+                        _logger.LogInformation(
+                            "Uporabnik je ustvaril račun prek ponudnika {Name}.",
+                            info.LoginProvider);
 
                         var userId = await _userManager.GetUserIdAsync(user);
                         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
                         var callbackUrl = Url.Page(
                             "/Account/ConfirmEmail",
                             pageHandler: null,
-                            values: new { area = "Identity", userId = userId, code = code },
+                            values: new
+                            {
+                                area = "Identity",
+                                userId = userId,
+                                code = code
+                            },
                             protocol: Request.Scheme);
 
-                        await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                        await _emailSender.SendEmailAsync(
+                            Input.Email,
+                            "Potrdite svoj e-poštni naslov",
+                            $"Prosimo, potrdite svoj račun s klikom <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>tukaj</a>.");
 
-                        // If account confirmation is required, we need to show the link if we don't have a real email sender
+                        // Če je zahtevana potrditev računa, preusmerimo na stran s potrditvijo.
                         if (_userManager.Options.SignIn.RequireConfirmedAccount)
                         {
-                            return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
+                            return RedirectToPage("./RegisterConfirmation",
+                                new { Email = Input.Email });
                         }
 
-                        await _signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+                        await _signInManager.SignInAsync(
+                            user,
+                            isPersistent: false,
+                            info.LoginProvider);
+
                         return LocalRedirect(returnUrl);
                     }
                 }
+
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -206,9 +236,11 @@ namespace SmartPark.Areas.Identity.Pages.Account
             }
             catch
             {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the external login page in /Areas/Identity/Pages/Account/ExternalLogin.cshtml");
+                throw new InvalidOperationException(
+                    $"Ni mogoče ustvariti primerka razreda '{nameof(ApplicationUser)}'. " +
+                    $"Preverite, da razred '{nameof(ApplicationUser)}' ni abstrakten in ima konstruktor brez parametrov, " +
+                    $"ali pa prepišite stran za zunanjo prijavo v " +
+                    $"/Areas/Identity/Pages/Account/ExternalLogin.cshtml");
             }
         }
 
@@ -216,8 +248,10 @@ namespace SmartPark.Areas.Identity.Pages.Account
         {
             if (!_userManager.SupportsUserEmail)
             {
-                throw new NotSupportedException("The default UI requires a user store with email support.");
+                throw new NotSupportedException(
+                    "Privzeti uporabniški vmesnik zahteva shrambo uporabnikov s podporo za e-poštne naslove.");
             }
+
             return (IUserEmailStore<ApplicationUser>)_userStore;
         }
     }

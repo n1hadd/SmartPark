@@ -26,40 +26,23 @@ namespace SmartPark.Areas.Identity.Pages.Account.Manage
             _signInManager = signInManager;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string Username { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string StatusMessage { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            [Phone]
-            [Display(Name = "Phone number")]
+            [Phone(ErrorMessage = "Vnesite veljavno telefonsko številko.")]
+            [Display(Name = "Telefonska številka")]
             public string PhoneNumber { get; set; }
 
             [Display(Name = "Registrska številka")]
             public string RegistrskaStevilka { get; set; }
         }
-
 
         private async Task LoadAsync(ApplicationUser user)
         {
@@ -71,17 +54,17 @@ namespace SmartPark.Areas.Identity.Pages.Account.Manage
             Input = new InputModel
             {
                 PhoneNumber = phoneNumber,
-                RegistrskaStevilka = user.RegistrskaStevilka   // <-- tukaj
+                RegistrskaStevilka = user.RegistrskaStevilka
             };
         }
-
 
         public async Task<IActionResult> OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
+
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Ni mogoče naložiti uporabnika z ID '{_userManager.GetUserId(User)}'.");
             }
 
             await LoadAsync(user);
@@ -91,9 +74,10 @@ namespace SmartPark.Areas.Identity.Pages.Account.Manage
         public async Task<IActionResult> OnPostAsync()
         {
             var user = await _userManager.GetUserAsync(User);
+
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Ni mogoče naložiti uporabnika z ID '{_userManager.GetUserId(User)}'.");
             }
 
             if (!ModelState.IsValid)
@@ -103,15 +87,18 @@ namespace SmartPark.Areas.Identity.Pages.Account.Manage
             }
 
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
+
             if (Input.PhoneNumber != phoneNumber)
             {
                 var setPhoneResult = await _userManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+
                 if (!setPhoneResult.Succeeded)
                 {
-                    StatusMessage = "Unexpected error when trying to set phone number.";
+                    StatusMessage = "Pri posodabljanju telefonske številke je prišlo do napake.";
                     return RedirectToPage();
                 }
             }
+
             if (Input.RegistrskaStevilka != user.RegistrskaStevilka)
             {
                 user.RegistrskaStevilka = Input.RegistrskaStevilka;
@@ -119,9 +106,10 @@ namespace SmartPark.Areas.Identity.Pages.Account.Manage
             }
 
             await _signInManager.RefreshSignInAsync(user);
-            StatusMessage = "Your profile has been updated";
+
+            StatusMessage = "Profil je bil uspešno posodobljen.";
+
             return RedirectToPage();
         }
-
     }
 }

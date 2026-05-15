@@ -56,32 +56,28 @@ namespace SmartPark.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+            [Required(ErrorMessage = "Vnos kode za preverjanje pristnosti je obvezen.")]
+            [StringLength(
+                7,
+                ErrorMessage = "Polje {0} mora vsebovati najmanj {2} in največ {1} znakov.",
+                MinimumLength = 6)]
             [DataType(DataType.Text)]
-            [Display(Name = "Authenticator code")]
+            [Display(Name = "Koda iz avtentikatorja")]
             public string TwoFactorCode { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Display(Name = "Remember this machine")]
+            [Display(Name = "Zapomni si to napravo")]
             public bool RememberMachine { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync(bool rememberMe, string returnUrl = null)
         {
-            // Ensure the user has gone through the username & password screen first
+            // Preverimo, da je uporabnik najprej uspešno vnesel e-poštni naslov in geslo.
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
 
             if (user == null)
             {
-                throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+                throw new InvalidOperationException(
+                    "Ni mogoče naložiti uporabnika za dvostopenjsko preverjanje pristnosti.");
             }
 
             ReturnUrl = returnUrl;
@@ -102,29 +98,47 @@ namespace SmartPark.Areas.Identity.Pages.Account
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
             {
-                throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+                throw new InvalidOperationException(
+                    "Ni mogoče naložiti uporabnika za dvostopenjsko preverjanje pristnosti.");
             }
 
-            var authenticatorCode = Input.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
+            var authenticatorCode = Input.TwoFactorCode
+                .Replace(" ", string.Empty)
+                .Replace("-", string.Empty);
 
-            var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, rememberMe, Input.RememberMachine);
+            var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(
+                authenticatorCode,
+                rememberMe,
+                Input.RememberMachine);
 
             var userId = await _userManager.GetUserIdAsync(user);
 
             if (result.Succeeded)
             {
-                _logger.LogInformation("User with ID '{UserId}' logged in with 2fa.", user.Id);
+                _logger.LogInformation(
+                    "Uporabnik z ID-jem '{UserId}' se je uspešno prijavil z dvostopenjskim preverjanjem pristnosti.",
+                    user.Id);
+
                 return LocalRedirect(returnUrl);
             }
             else if (result.IsLockedOut)
             {
-                _logger.LogWarning("User with ID '{UserId}' account locked out.", user.Id);
+                _logger.LogWarning(
+                    "Račun uporabnika z ID-jem '{UserId}' je zaklenjen.",
+                    user.Id);
+
                 return RedirectToPage("./Lockout");
             }
             else
             {
-                _logger.LogWarning("Invalid authenticator code entered for user with ID '{UserId}'.", user.Id);
-                ModelState.AddModelError(string.Empty, "Invalid authenticator code.");
+                _logger.LogWarning(
+                    "Uporabnik z ID-jem '{UserId}' je vnesel neveljavno kodo za preverjanje pristnosti.",
+                    user.Id);
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Vnesena koda za preverjanje pristnosti ni veljavna.");
+
                 return Page();
             }
         }

@@ -48,24 +48,22 @@ namespace SmartPark.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [BindProperty]
-            [Required]
+            [Required(ErrorMessage = "Vnos obnovitvene kode je obvezen.")]
             [DataType(DataType.Text)]
-            [Display(Name = "Recovery Code")]
+            [Display(Name = "Obnovitvena koda")]
             public string RecoveryCode { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync(string returnUrl = null)
         {
-            // Ensure the user has gone through the username & password screen first
+            // Preverimo, da je uporabnik najprej opravil prijavo z e-pošto in geslom.
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
+
             if (user == null)
             {
-                throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+                throw new InvalidOperationException(
+                    "Ni mogoče naložiti uporabnika za dvostopenjsko preverjanje pristnosti.");
             }
 
             ReturnUrl = returnUrl;
@@ -81,9 +79,11 @@ namespace SmartPark.Areas.Identity.Pages.Account
             }
 
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
+
             if (user == null)
             {
-                throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+                throw new InvalidOperationException(
+                    "Ni mogoče naložiti uporabnika za dvostopenjsko preverjanje pristnosti.");
             }
 
             var recoveryCode = Input.RecoveryCode.Replace(" ", string.Empty);
@@ -94,18 +94,28 @@ namespace SmartPark.Areas.Identity.Pages.Account
 
             if (result.Succeeded)
             {
-                _logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", user.Id);
+                _logger.LogInformation(
+                    "Uporabnik z ID-jem '{UserId}' se je uspešno prijavil z obnovitveno kodo.",
+                    user.Id);
+
                 return LocalRedirect(returnUrl ?? Url.Content("~/"));
             }
+
             if (result.IsLockedOut)
             {
-                _logger.LogWarning("User account locked out.");
+                _logger.LogWarning("Uporabniški račun je zaklenjen.");
                 return RedirectToPage("./Lockout");
             }
             else
             {
-                _logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", user.Id);
-                ModelState.AddModelError(string.Empty, "Invalid recovery code entered.");
+                _logger.LogWarning(
+                    "Uporabnik z ID-jem '{UserId}' je vnesel neveljavno obnovitveno kodo.",
+                    user.Id);
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Vnesena obnovitvena koda ni veljavna.");
+
                 return Page();
             }
         }

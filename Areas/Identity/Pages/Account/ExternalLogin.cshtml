@@ -1,29 +1,43 @@
 ﻿@page
 @model ExternalLoginModel
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Registracija";
 }
 
 <h1>@ViewData["Title"]</h1>
-<h2 id="external-login-title">Associate your @Model.ProviderDisplayName account.</h2>
+
+<h2 id="external-login-title">
+    Povežite svoj račun @Model.ProviderDisplayName.
+</h2>
+
 <hr />
 
 <p id="external-login-description" class="text-info">
-    You've successfully authenticated with <strong>@Model.ProviderDisplayName</strong>.
-    Please enter an email address for this site below and click the Register button to finish
-    logging in.
+    Uspešno ste se avtenticirali z <strong>@Model.ProviderDisplayName</strong>.
+    Spodaj vnesite svoj e-poštni naslov za to spletno mesto in kliknite gumb
+    Registracija, da dokončate prijavo.
 </p>
 
 <div class="row">
     <div class="col-md-4">
-        <form asp-page-handler="Confirmation" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+        <form asp-page-handler="Confirmation"
+              asp-route-returnUrl="@Model.ReturnUrl"
+              method="post">
+
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
             <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email."/>
+                <input asp-for="Input.Email"
+                       class="form-control"
+                       autocomplete="email"
+                       placeholder="Vnesite svoj e-poštni naslov." />
                 <label asp-for="Input.Email" class="form-label"></label>
                 <span asp-validation-for="Input.Email" class="text-danger"></span>
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+
+            <button type="submit" class="w-100 btn btn-lg btn-primary">
+                Registriraj
+            </button>
         </form>
     </div>
 </div>
