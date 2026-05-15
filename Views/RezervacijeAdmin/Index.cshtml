@@ -1,0 +1,44 @@
+@model List<SmartPark.Models.Rezervacija>
+
+@{
+    ViewData["Title"] = "Vse rezervacije";
+}
+
+<div class="container py-4">
+    <h2 class="mb-3">Vse rezervacije</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">Trenutno ni rezervacij.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Uporabnik</th>
+                        <th>Parkirišče</th>
+                        <th>Mesto</th>
+                        <th>Začetek</th>
+                        <th>Konec</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var r in Model)
+                {
+                    <tr>
+                        <td>@r.Id</td>
+                        <td>@(r.Uporabnik?.Email ?? r.Uporabnik?.UserName ?? r.ApplicationUserId ?? "-")</td>
+                        <td>@(r.Parkirisce?.Naslov ?? "-")</td>
+                        <td>@(r.ParkirnoMesto?.Stevilka.ToString() ?? "-")</td>
+                        <td>@r.Zacetek.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@r.Konec.ToString("dd.MM.yyyy HH:mm")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
